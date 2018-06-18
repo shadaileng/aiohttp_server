@@ -1,0 +1,27 @@
+#!usr/bin/python3
+#-*- coding: utf-8 -*-
+
+'''
+	******************
+	*     Settings   *
+	******************
+	     Powered By %s
+'''
+
+__author__ = 'Shadaileng'
+
+import yaml, os
+
+BASC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+config_path = BASC_DIR + '/config/default.yaml'
+
+def get_config(path):
+	with open(path) as file:
+		config = yaml.load(file)
+	return config
+
+config = get_config(config_path)
+
+if __name__ == '__main__':
+	print(__doc__ % __author__)
+	print(config)

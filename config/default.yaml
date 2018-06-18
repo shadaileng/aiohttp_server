@@ -1,0 +1,6 @@
+db:
+  database: ./res/test.db
+  user: 
+  password: 
+  host:
+  port:
