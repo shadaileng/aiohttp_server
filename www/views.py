@@ -10,10 +10,15 @@
 
 __author__ = 'Shadaileng'
 
+import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s line:%(lineno)d %(filename)s %(funcName)s >>> %(message)s')
+
+import asyncio
+
 from aiohttp import web
 
 async def index(request):
-	print(request.app['config'])
+	res = await request.app['db'].select('select * from file')
+	print('res: %s' % res)
 	return web.Response(text='Hello Aiohttp')
 
 

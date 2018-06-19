@@ -10,6 +10,8 @@
 
 __author__ = 'Shadaileng'
 
+import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s line:%(lineno)d %(filename)s %(funcName)s >>> %(message)s')
+
 from views import index
 
 def set_route(app):

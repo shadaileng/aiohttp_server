@@ -10,6 +10,8 @@
 
 __author__ = 'Shadaileng'
 
+import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s line:%(lineno)d %(filename)s %(funcName)s >>> %(message)s')
+
 import yaml, os
 
 BASC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,4 +26,4 @@ config = get_config(config_path)
 
 if __name__ == '__main__':
 	print(__doc__ % __author__)
-	print(config)
+	logging.info(config)
