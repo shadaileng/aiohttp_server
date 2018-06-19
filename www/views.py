@@ -15,9 +15,11 @@ import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(le
 import asyncio
 
 from aiohttp import web
+from models import File
 
 async def index(request):
-	res = await request.app['db'].select('select * from file')
+	file = File()
+	res = await file.findCount(request.app['db'])
 	print('res: %s' % res)
 	return web.Response(text='Hello Aiohttp')
 
