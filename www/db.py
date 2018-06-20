@@ -14,6 +14,7 @@ import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(le
 
 from settings import config
 import sqlite3, os, random, asyncio
+from models import User, Blog, Comment, File
 
 class Engine(object):
 	def __init__(self, database, user, password, host, port, minsize=5, maxsize=5, flag='sqlite3'):
@@ -26,14 +27,18 @@ class Engine(object):
 		self._pool = []
 		self._minsize = minsize
 		self._maxsize = maxsize
-		if not os.path.exists(database):
-			raise Exception('not found', 'database', database)
-		else:
-			for i in range(minsize):
-				conn = self.create_conn()
+		# if not os.path.exists(database):
+		# 	raise Exception('not found', 'database', database)
+		# else:
+		for i in range(minsize):
+			conn = self.create_conn()
 		
 	def connect(self):
+		''' 获取数据库连接: 如果连接池中没有空闲连接, 创建一个新的连接，下一次获取连接时，这个连接空闲则会被删除'''
 		conn = None
+		for i, conn in enumerate(self._pool):
+			if conn.index >= self._minsize and conn.status == 0:
+				self._pool.pop(i)
 		for conn in self._pool:
 			if conn.status == 0:
 				break
@@ -43,6 +48,7 @@ class Engine(object):
 		return conn
 
 	def create_conn(self):
+		''' 创建数据库连接 '''
 		try:
 			el = sqlite3.connect(self._database)
 			if el:
@@ -58,9 +64,21 @@ class Engine(object):
 			logging.error(e)
 			conn = None
 		return conn
+	async def close(self, app):
+		logging.info('close engine: %s' % len(self._pool))
+		for i, conn in enumerate(self._pool):
+			self._pool[i] = None
+			print(conn)
+			# self._pool.pop(i)
+		print('===========================')
+		for conn in self._pool:
+			print(conn)
+		# logging.info('engine: %s' % self._pool)
+
 
 	async def select(self, sql, args = (), size = None):
-		print('%s %s' % (sql, args))
+		''' 查询数据 '''
+		logging.info('%s %s' % (sql, args))
 		try:
 			with self.connect() as conn:
 				connection = conn.el
@@ -79,13 +97,15 @@ class Engine(object):
 				cur.close()
 		return result
 
-	async def execute(self, sql, args):
+	async def execute(self, sql, args=()):
+		''' 执行UDI '''
 		logging.info('%s %s' % (sql, args))
 		try:
 			with self.connect() as conn:
 				connection = conn.el
-				conn.execute(sql, args)
-				change = conn.total_changes
+				connection.execute(sql, args)
+				change = connection.total_changes
+				connection.commit()
 		except (sqlite3.OperationalError, sqlite3.IntegrityError) as e:
 			logging.error('Could not complete operation: %s' % e)
 			change = 0
@@ -103,24 +123,20 @@ class Connection(object):
 		self.next_conn = next_conn
 		self.minsize = minsize
 	def __enter__(self):
-		logging.info('Connection enter: %s' % self.index)
+		# logging.info('Connection enter: %s' % self.index)
 		return self
 	def __exit__(self, type, value, trace):
-		logging.info('Connection exit: %s' % self.index)
+		# logging.info('Connection exit: %s' % self.index)
 		self.status = 0
 		if self.index >= self.minsize:
 			self.pre_conn.next_conn = self.next_conn
 	def __str__(self):
 		return '{index: %s, el: %s, status: %s, pre_conn: %s, next_conn: %s}' % (self.index, self.el, self.status, self.pre_conn.index if self.pre_conn else None, self.next_conn.index if self.next_conn else None)
 
-
-
 if __name__ == '__main__':
 	print(__doc__ % __author__)
-	logging.info(config)
-	# engine = Engine(config['db']['database'], '', '', '', '')
-	# for i in range(10):
-	# 	with engine.connect() as conn:
-	# 		logging.info(conn)
-	# res = select('select * from file')
-	# print(res)
+	engine = Engine(config['db']['database'], '', '', '', '')
+	tasks = [User().create(engine), Blog().create(engine), Comment().create(engine), File().create(engine)]
+	loop = asyncio.get_event_loop()
+	loop.run_until_complete(asyncio.wait(tasks))
+	loop.close()

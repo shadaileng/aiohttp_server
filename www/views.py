@@ -18,8 +18,8 @@ from aiohttp import web
 from models import File
 
 async def index(request):
-	file = File()
-	res = await file.findCount(request.app['db'])
+	file = File(path='./res/tmp', name='tmp', filetype='png', size='100')
+	res = await file.delete(request.app['db'])
 	print('res: %s' % res)
 	return web.Response(text='Hello Aiohttp')
 

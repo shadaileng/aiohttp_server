@@ -185,3 +185,43 @@ def server():
 	app['config'] = config
 	web.run_app(app)
 ```
+
+## 数据库
+
+> 搭建一个可以创建数据库连接、查询和修改数据的框架。新建文件`db.py`
+
+```
+class Engine(object):
+  ....
+
+class Connection(object):
+  """docstring for Connection"""
+  ....
+```
+
+
+> 搭建一个`ORM`框架，执行`UDIQ`。新建文件`models.py`
+
+```
+class Column(object):
+  ....
+class TableMetaClass(type):
+  ....
+class Table(dict, metaclass=TableMetaClass):
+  ....
+class File(Table):
+  ....
+class User(Table):
+  ....
+class Blog(Table):
+  ....
+class Comment(Table):
+  ....
+
+```
+
+> 初始化数据库，执行`db.py`文件
+
+```
+$ python3 www/db.py
+```

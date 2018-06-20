@@ -22,6 +22,7 @@ def server():
 	set_route(app)
 	app['config'] = config
 	app['db'] = Engine(config['db']['database'], '', '', '', '')
+	app.on_cleanup.append(app['db'].close)
 	web.run_app(app)
 
 
