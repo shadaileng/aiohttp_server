@@ -89,7 +89,7 @@ async def index(request):
 
 ```
 #routes.py
-from views import index
+from www.views import index
 
 def set_routes(app):
 	app.router.add_get('/', index)
@@ -105,7 +105,7 @@ web.run_app(app)
 > 运行`app.py`
 
 ```
-$ python3 app.py
+$ python3 -m www
 ======== Running on http://0.0.0.0:8080 ========
 (Press CTRL+C to quit)
 ```
@@ -176,8 +176,8 @@ config = get_config(config_path)
 # app.py
 
 from aiohttp import web
-from routes import set_route
-from settings import config
+from www.routes import set_route
+from www.settings import config
 
 def server():
 	app = web.Application()
@@ -225,3 +225,22 @@ class Comment(Table):
 ```
 $ python3 www/db.py
 ```
+
+> 应用记录`Engine`，并注册关闭程序资源回收函数
+
+```
+# app.py
+from aiohttp import web
+from www.routes import set_route
+from www.settings import config
+from www.db import Engine
+
+def server():
+	app = web.Application()
+	set_route(app)
+	app['config'] = config
+	app['db'] = Engine(config['db']['database'], '', '', '', '')
+	app.on_cleanup.append(app['db'].close)
+	web.run_app(app)
+```
+

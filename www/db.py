@@ -12,9 +12,9 @@ __author__ = 'Shadaileng'
 
 import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s line:%(lineno)d %(filename)s %(funcName)s >>> %(message)s')
 
-from settings import config
+from www.settings import config
 import sqlite3, os, random, asyncio
-from models import User, Blog, Comment, File
+from www.models import User, Blog, Comment, File
 
 class Engine(object):
 	def __init__(self, database, user, password, host, port, minsize=5, maxsize=5, flag='sqlite3'):
@@ -54,9 +54,7 @@ class Engine(object):
 			if el:
 				# print('%s connect successed' % self._database)
 				pre_conn = self._pool[len(self._pool) - 1] if len(self._pool) > 0 else None
-				conn = Connection(len(self._pool) if len(self._pool) <= 5 else random.randint(100, 999), el, 0, pre_conn, None, self._minsize)
-				if pre_conn:
-					pre_conn.next_conn = conn
+				conn = Connection(len(self._pool) if len(self._pool) <= 5 else random.randint(100, 999), el, 0, self._minsize)
 				self._pool.append(conn)
 			else:
 				conn = None
@@ -65,15 +63,16 @@ class Engine(object):
 			conn = None
 		return conn
 	async def close(self, app):
-		logging.info('close engine: %s' % len(self._pool))
-		for i, conn in enumerate(self._pool):
-			self._pool[i] = None
-			print(conn)
-			# self._pool.pop(i)
+		''' 关闭程序时，关闭所有连接 '''
+		len_ = len(self._pool)
+		logging.info('close engine: %s' % len_)
 		print('===========================')
-		for conn in self._pool:
-			print(conn)
-		# logging.info('engine: %s' % self._pool)
+		for i in range(len_):
+			conn = self._pool[len(self._pool) - 1]
+			conn.close()
+			self._pool.pop()
+		print('===========================')
+		logging.info('close engine: %s' % len(self._pool))
 
 
 	async def select(self, sql, args = (), size = None):
@@ -114,13 +113,11 @@ class Engine(object):
 
 class Connection(object):
 	"""docstring for Connection"""
-	def __init__(self, index, el, status, pre_conn, next_conn, minsize):
+	def __init__(self, index, el, status, minsize):
 		super(Connection, self).__init__()
 		self.index = index
 		self.el = el
 		self.status = status
-		self.pre_conn = pre_conn
-		self.next_conn = next_conn
 		self.minsize = minsize
 	def __enter__(self):
 		# logging.info('Connection enter: %s' % self.index)
@@ -129,9 +126,15 @@ class Connection(object):
 		# logging.info('Connection exit: %s' % self.index)
 		self.status = 0
 		if self.index >= self.minsize:
-			self.pre_conn.next_conn = self.next_conn
+			if self.el:
+				self.el.close()
+				self.el = None
 	def __str__(self):
-		return '{index: %s, el: %s, status: %s, pre_conn: %s, next_conn: %s}' % (self.index, self.el, self.status, self.pre_conn.index if self.pre_conn else None, self.next_conn.index if self.next_conn else None)
+		return '{index: %s, el: %s, status: %s}' % (self.index, self.el, self.status)
+	def close(self):
+		if self.el:
+			self.el.close()
+			self.el = None
 
 if __name__ == '__main__':
 	print(__doc__ % __author__)

@@ -12,7 +12,7 @@ __author__ = 'Shadaileng'
 
 import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s line:%(lineno)d %(filename)s %(funcName)s >>> %(message)s')
 
-from apis import APIValueError, APIError
+from www.apis import APIValueError, APIError
 
 from datetime import datetime
 
@@ -23,6 +23,8 @@ class Column(object):
 		self.primary_key = primary_key
 		self.nullable = nullable
 		self.default = default
+	def __str__(self):
+		return '{name: %s, column_type: %s, primary_key: %s, nullable: %s, default: %s}' % (self.name, self.column_type, self.primary_key, self.nullable, self.default)
 
 class TableMetaClass(type):
 	def __new__(cls, name, bases, attrs):

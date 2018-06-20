@@ -12,17 +12,18 @@ __author__ = 'Shadaileng'
 
 import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s line:%(lineno)d %(filename)s %(funcName)s >>> %(message)s')
 
-import asyncio
+import asyncio, aiohttp_jinja2
 
 from aiohttp import web
-from models import File
+from www.models import File
 
+@aiohttp_jinja2.template('index.html')
 async def index(request):
-	file = File(path='./res/tmp', name='tmp', filetype='png', size='100')
-	res = await file.delete(request.app['db'])
-	print('res: %s' % res)
-	return web.Response(text='Hello Aiohttp')
-
+	file = File()
+	res = await file.find(request.app['db'])
+#	print('res: %s' % res)
+#	return web.Response(text='Hello Aiohttp')
+	return res
 
 if __name__ == '__main__':
 	print(__doc__ % __author__)
