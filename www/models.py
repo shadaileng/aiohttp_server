@@ -12,7 +12,7 @@ __author__ = 'Shadaileng'
 
 import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s line:%(lineno)d %(filename)s %(funcName)s >>> %(message)s')
 
-from www.apis import APIValueError, APIError
+from .apis import APIValueError, APIError
 
 from datetime import datetime
 

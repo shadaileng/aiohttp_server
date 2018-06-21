@@ -13,19 +13,26 @@ __author__ = 'Shadaileng'
 import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s line:%(lineno)d %(filename)s %(funcName)s >>> %(message)s')
 
 from aiohttp import web
-from www.routes import set_route
-from www.settings import config
-from www.db import Engine
+from .routes import set_route
+from .settings import config
+from .db import Engine, close_db, init_db
+from .middlewares import set_middleware
 
 import aiohttp_jinja2, jinja2
 
 def server():
 	app = web.Application()
-	set_route(app)
 	app['config'] = config
-	app['db'] = Engine(config['db']['database'], '', '', '', '')
+	# 加载模板
 	aiohttp_jinja2.setup(app, loader=jinja2.PackageLoader('www', 'templates'))
-	app.on_cleanup.append(app['db'].close)
+	# 程序启动和关闭的回调函数
+	app.on_startup.append(init_db)
+	app.on_cleanup.append(close_db)
+	# 添加中间件
+	set_middleware(app)
+	# 设置路由
+	set_route(app)
+	# 启动程序
 	web.run_app(app)
 
 

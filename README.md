@@ -18,6 +18,8 @@
 │   │   ├── index.html
 │   │   └── results.html
 │   └── www 
+│       ├── __init__.py
+│       ├── __main__.py
 │       ├── db.py
 │       ├── app.py
 │       ├── models.py
@@ -71,8 +73,9 @@ $ pip3 install aiohttp
 # app.py
 from aiohttp import web
 
-app = web.Application()
-web.run_app(app)
+def server():
+  app = web.Application()
+  web.run_app(app)
 ```
 
 > 创建视图
@@ -88,7 +91,7 @@ async def index(request):
 > 为视图注册路由
 
 ```
-#routes.py
+# routes.py
 from www.views import index
 
 def set_routes(app):
@@ -101,6 +104,16 @@ app = web.Application()
 set_routes(app)
 web.run_app(app)
 ```
+
+> 将文件夹`www`当作一个模块,新建文件`__init__.py`和`__main__.py`
+
+```
+# __main__.py
+from www.app import server
+
+server()
+```
+
 
 > 运行`app.py`
 
@@ -120,6 +133,8 @@ Hello Aiohttp!
 ```
 ├── aiohttp
     └── www
+        ├── __init__.py
+        ├── __main__.py
         ├── app.py
         ├── views.py
         └── routes.py
@@ -138,6 +153,8 @@ $ pip3 install pyyaml
 ```
 ├── aiohttp
     ├── www
+    │   ├── __init__.py
+    │   ├── __main__.py
     │   ├── app.py
     │   ├── views.py
     │   └── routes.py
@@ -168,6 +185,7 @@ def get_config(path):
 	return config
 
 config = get_config(config_path)
+config['BASC_DIR'] = BASC_DIR
 ```
 
 > 服务应用中加载配置
@@ -244,3 +262,101 @@ def server():
 	web.run_app(app)
 ```
 
+## 视图模板
+
+> 模板可以很方便地编写网页。只需要在`aophttp_jinjia2.template`注解标注的`view`函数返回页面需要数据的字典，就可以在页面上希纳是信息
+
+> 首先要安装`aophttp_jinjia2`模块
+
+```
+$ pip3 install aophttp_jinjia2
+```
+
+> `www`模块下新建文件夹`templates`，放入模板文件
+
+> 应用程序加载模板
+
+```
+# app.py
+import aiohttp_jinja2
+import jinja2
+
+aiohttp_jinja2.setup(
+    app, loader=jinja2.PackageLoader('www', 'templates'))
+```
+
+> 请求处理函数标注模板，并返回数据
+
+```
+# views.py
+
+import aiohttp_jinja2
+
+@aiohttp_jinja2.template('index.html')
+async def index(request):
+  res = {'a': 1, 'b'： 2}
+  return res
+
+```
+
+## 处理静态文件
+
+> 项目目录下新建静态文件文件夹`static`,为应用程序添加静态路由
+
+```
+# routes.py
+
+def set_route(app):
+  app.router.add_get('/', index)
+  set_static_route(app)
+
+def set_static_route(app):
+  app.router.add_static('/static/', path=config['BASC_DIR'] + '/static', name='static')
+```
+
+## 中间件
+
+> 中间件堆放在`web`处理函数周围，在预处理请求的处理程序之前被调用，并且在得到响应以用于后处理给定的响应之后被调用。
+
+> 每个中间件都接受请求`request`和处理函数`handler`两个参数，返回响应`response`。中间件时处理请求或者响应的协同程序。
+
+```
+import aiohttp_jinja2
+from aiohttp import web
+
+async def handle_404(request):
+  return aiohttp_jinja2.render_template('404.html', request, {})
+
+async def handle_500(request):
+  return aiohttp_jinja2.render_template('500.html', request, {})
+
+def create_error_middleware(overrides):
+  @web.middleware
+  async def error_middelware(request, handler):
+
+    try:
+      response = await handler(request)
+      override = overrides.get(response.status)
+      if override:
+        return await override(request)
+      return response
+    except web.HTTPException as e:
+      logging.error('error middleware: %s' % e)
+      override = overrides.get(e.status)
+      if override:
+        return await override(request)
+  return error_middelware
+
+def set_middleware(app):
+  
+  ''' 
+  500 - web.HTTPInternalServerError(text="测试中间件")
+  404 - web.HTTPNotFound(text="测试中间件")
+  '''
+  error_middelware = create_error_middleware({404: handle_404, 500: handle_500})
+  app.middlewares.append(error_middelware)
+```
+
+> 根据处理函数`handler`处理请求`request`得到响应`response`的状态码来选择`jinja2`要渲染的模板。
+
+> 如果处理函数在处理请求时抛出异常(`Internal Error`对应状态码`500`,`NotFound`对应状态码`404`)，捕获`web.HTTPException`异常，并根据其状态码选择选渲染模板。

@@ -12,9 +12,9 @@ __author__ = 'Shadaileng'
 
 import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s line:%(lineno)d %(filename)s %(funcName)s >>> %(message)s')
 
-from www.settings import config
+from .settings import config
 import sqlite3, os, random, asyncio
-from www.models import User, Blog, Comment, File
+from .models import User, Blog, Comment, File
 
 class Engine(object):
 	def __init__(self, database, user, password, host, port, minsize=5, maxsize=5, flag='sqlite3'):
@@ -62,18 +62,6 @@ class Engine(object):
 			logging.error(e)
 			conn = None
 		return conn
-	async def close(self, app):
-		''' 关闭程序时，关闭所有连接 '''
-		len_ = len(self._pool)
-		logging.info('close engine: %s' % len_)
-		print('===========================')
-		for i in range(len_):
-			conn = self._pool[len(self._pool) - 1]
-			conn.close()
-			self._pool.pop()
-		print('===========================')
-		logging.info('close engine: %s' % len(self._pool))
-
 
 	async def select(self, sql, args = (), size = None):
 		''' 查询数据 '''
@@ -135,6 +123,25 @@ class Connection(object):
 		if self.el:
 			self.el.close()
 			self.el = None
+
+async def init_db(app):
+	config = app['config']
+	engine = Engine(config['db']['database'], config['db']['user'], config['db']['password'], config['db']['host'], config['db']['port'])
+	app['db'] = engine
+
+async def close_db(app):
+	''' 关闭程序时，关闭所有连接 '''
+	engine = app['db']
+	len_ = len(engine._pool)
+	logging.info('close engine: %s' % len_)
+	print('===========================')
+	for i in range(len_):
+		conn = engine._pool[len(engine._pool) - 1]
+		conn.close()
+		engine._pool.pop()
+	print('===========================')
+	logging.info('close engine: %s' % len(engine._pool))
+
 
 if __name__ == '__main__':
 	print(__doc__ % __author__)

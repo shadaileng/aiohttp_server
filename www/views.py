@@ -15,7 +15,7 @@ import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(le
 import asyncio, aiohttp_jinja2
 
 from aiohttp import web
-from www.models import File
+from .models import File
 
 @aiohttp_jinja2.template('index.html')
 async def index(request):
@@ -24,6 +24,8 @@ async def index(request):
 #	print('res: %s' % res)
 #	return web.Response(text='Hello Aiohttp')
 	return res
+	# return web.Response(status=500)
+
 
 if __name__ == '__main__':
 	print(__doc__ % __author__)

@@ -4,3 +4,4 @@ db:
   password: 
   host:
   port:
+  minsize: 5

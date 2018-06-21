@@ -23,6 +23,7 @@ def get_config(path):
 	return config
 
 config = get_config(config_path)
+config['BASC_DIR'] = BASC_DIR
 
 if __name__ == '__main__':
 	print(__doc__ % __author__)
