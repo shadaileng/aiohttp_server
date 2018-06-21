@@ -27,6 +27,9 @@ def create_error_middleware(overrides):
 
 		try:
 			response = await handler(request)
+			print('===================================')
+			print('response: %s' % response)
+			print('===================================')
 			override = overrides.get(response.status)
 			if override:
 				return await override(request)

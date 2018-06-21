@@ -28,15 +28,22 @@ def server():
 	# 程序启动和关闭的回调函数
 	app.on_startup.append(init_db)
 	app.on_cleanup.append(close_db)
+	app.on_cleanup.append(clearWebsocket)
 	# 添加中间件
 	set_middleware(app)
+	# 设置websockets
+	app['websockets'] = {}
 	# 设置路由
 	set_route(app)
 	# 启动程序
 	web.run_app(app)
 
 
-
+async def clearWebsocket(app):
+	print('=======================')
+	for ws in app['websockets'].values():
+		await ws.close()
+	app['websockets'].clear()
 
 
 

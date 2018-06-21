@@ -12,11 +12,12 @@ __author__ = 'Shadaileng'
 
 import logging; logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s line:%(lineno)d %(filename)s %(funcName)s >>> %(message)s')
 
-from .views import index
+from .views import index, chat
 from .settings import config
 
 def set_route(app):
 	app.router.add_get('/', index)
+	app.router.add_get('/chat', chat)
 	set_static_route(app)
 
 def set_static_route(app):
