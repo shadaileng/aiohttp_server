@@ -24,13 +24,22 @@ def get_random_name():
 
 @aiohttp_jinja2.template('index.html')
 async def index(request):
-	file = File()
-	res = await file.find(request.app['db'])
-#	print('res: %s' % res)
-#	return web.Response(text='Hello Aiohttp')
-	return res
-	# return web.Response(status=500)
+	logging.info('index')
 
+	return {}
+
+@aiohttp_jinja2.template('login.html')
+async def login(request):
+	return {}
+
+# @aiohttp_jinja2.template('login.html')
+async def login_post(request):
+	data = await request.post()
+	name = data['name']
+	password = data['password']
+	logging.info('name: %s, password: %s' % (name, password))
+	logging.info('data: %s' % data)
+	return {}
 
 @aiohttp_jinja2.template('chat.html')
 async def chat(request):

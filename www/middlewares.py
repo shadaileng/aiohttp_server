@@ -36,6 +36,7 @@ def create_error_middleware(overrides):
 			return response
 		except web.HTTPException as e:
 			logging.error('error middleware: %s' % e)
+			print('request: %s' % request)
 			override = overrides.get(e.status)
 			if override:
 				return await override(request)

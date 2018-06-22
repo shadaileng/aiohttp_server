@@ -2,6 +2,61 @@
 <html>
 	<head>
 		<title>chat</title>
+		<style type="text/css">
+			#container {
+				position: absolute;
+				width: 25em;
+				height: 35em; 
+			}
+			#connection {
+				position: relative;
+			}
+			#log {
+				position: relative;
+				text-align: center;
+				width:100%;
+				height:100%;
+				overflow:auto;
+				border:1px solid black;
+				border-radius: 5px;
+			}
+			#log .item {
+				position: relative;
+				margin-bottom: 10px;
+			}
+			#log .item_header {
+				position: relative;
+			}
+			#log .item_content{
+				position: relative;
+			}
+			.item_content .this_name {
+				text-align: right;
+				padding: 3px;
+			}
+			.item_content .that_name {
+				text-align: left;
+				padding: 3px;
+			}
+			#log .this {
+				float: right;
+				text-align: right;
+			}
+			#log .that {
+				float: left;
+				text-align: left;
+			}
+			#log .panel {
+				padding: 10px;
+				background-color: #a1f0ad;
+				border-radius: 5px;
+				word-wrap:break-word;
+				max-width: 70%;
+			}
+			#chat {
+				position: relative;
+			}
+		</style>
 		<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
 		<script type="text/javascript">
 			$(function(){
@@ -23,8 +78,19 @@
 					return fmt;
 				}
 				function log(msg){
+					let msgtime = ""
+					if(!this.msgtime) {
+						this.msgtime = new Date()
+						msgtime = this.msgtime.Format('yyyy-MM-dd hh:mm')
+					}else {
+						if (new Date().getSeconds() < this.msgtime.getSeconds()) {
+							this.msgtime = new Date()
+							msgtime = this.msgtime.Format('yyyy-MM-dd hh:mm')
+						}
+					}
+					console.log(this.msgtime)
 					var log_panel = $('#log')
-					log_panel.html(log_panel.html() + new Date().Format('yyyy-MM-dd HH:mm:ss') + ': ' + msg + '<br/>')
+					log_panel.html(log_panel.html() + '<div class="item"><div class="item_header">' + msgtime + '</div><div class="item_content">' + msg + '</div><div style="clear:both"></div></div>')
 					log_panel.scrollTop(log_panel.scrollTop() + 1000);
 				}
 				function connect(){
@@ -36,24 +102,27 @@
 					};
 					conn.onmessage = function(e){
 						var data = JSON.parse(e.data)
+						let content = ''
 						switch(data.action) {
 							case 'join':
-								log('Joined ' + data.name);
+								content = data.name + ' Joined '
+								log('<div class="that panel">' + content + '</div>')
+								break
+							case 'sent':
+								content = '<div class="that_name">' + data.name + '</div><div class="panel that">' + data.text + '</div>'
+								log(content)
 								break
 							case 'disconnect':
-								name = data.name
-								log('Disconnected ' + name);
-								updateUI()
+								content = data.name + ' Disconnected'
+								log('<div class="that panel">' + content + '</div>')
 								break
 							case 'connect':
 								name = data.name
-								log('Connected as ' + name);
-								updateUI()
-								break
-							case 'sent':
-								log(data.name + ': ' + data.text)
+								content = data.name + ' Connected'
+								log('<div class="this panel">' + content + '</div>')
 								break
 						}
+						updateUI()
 					};
 					conn.onclose = function() {
 						log('Disconnected')
@@ -65,6 +134,7 @@
 						conn.close()
 						conn = null
 						name = 'UNKNOWN'
+						this.msgtime = ""
 						updateUI()
 					}
 				}
@@ -72,9 +142,10 @@
 					if (conn == null) {
 						$('#status').text('disconnect')
 						$('#connect').html('Connect')
-						$('#send').prop('disable', true)
+						$('#send').prop('disabled', true)
 					} else {
-						$('#status').text('connected (' + conn.protocol + ')');
+						// $('#status').text('connected (' + conn.url + ')');
+						$('#status').text('connected');
 						$('#connect').html('Disconnect');
 						$('#send').prop("disabled", false);
 					}
@@ -92,7 +163,8 @@
 				$('#send').on('click', function() {
 					var text = $('#text').val();
 					// log('Sending: ' + text);
-					log(text);
+					content = ' <div class="this_name">' + name + '</div><div class="panel this">' + text + '</div>'
+					log(content)
 					conn.send(text);
 					$('#text').val('').focus();
 					return false;
@@ -107,15 +179,18 @@
 		</script>
 	</head>
 	<body>
-		<div>
-			<button id="connect">Connect</button>
-			<span id="name">UNKNOWN</span>
-			<span id="status">disconnect</span>
+		<div id="container">
+			<div id="connection">
+				<button id="connect">Connect</button>
+				<span id="name">UNKNOWN</span>
+				<span id="status">disconnect</span>
+			</div>
+			<div id="log">
+			</div>
+			<form id="chat" onsubmit="return false">
+				<input id="text" type="text" style="border-radius: 20px; width: 80%">
+				<input id="send" type="button" value="Send" disabled='true' style="width: 15%">
+			</form>
 		</div>
-		<div id="log" style="width:40em;height:15em;overflow:auto;border:1px solid black"></div>
-		<form id="chat" onsubmit="return false">
-			<input id="text" type="text">
-			<input id="send" type="button" value="Send" disable>
-		</form>
 	</body>
 </html>
