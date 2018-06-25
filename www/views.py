@@ -18,20 +18,29 @@ from aiohttp import web
 from .models import File
 from faker import Faker
 
+routes = web.RouteTableDef()
+
 def get_random_name():
     fake = Faker()
     return fake.name()
 
+@routes.get('/')
 @aiohttp_jinja2.template('index.html')
 async def index(request):
 	logging.info('index')
+	print('=====================================')
+	print('query: %s' % request.query)
+	for k, v in request.query.items():
+		print('%s: %s' % (k, v))
+	print('=====================================')
 
 	return {}
-
+@routes.get('/login')
 @aiohttp_jinja2.template('login.html')
 async def login(request):
 	return {}
 
+@routes.post('/login')
 @aiohttp_jinja2.template('index.html')
 async def login_post(request):
 	data = await request.post()
@@ -41,6 +50,30 @@ async def login_post(request):
 	logging.info('data: %s' % data)
 	return {'name': name, 'password': password}
 
+@routes.post('/upload')
+@aiohttp_jinja2.template('index.html')
+async def upload(request):
+	# data = await request.post()
+	# file = data['file']
+	# filename = file.filename
+	# file_ = file.file
+	# with open('./' + filename, 'wb') as f:
+	# 	data = file_.read()
+	# 	f.write(data)
+	reader = await request.multipart()
+	print(reader)
+	data = await reader.next()
+	filename = data.filename
+	with open('./' + filename, 'wb') as f:
+		while True:
+			chunk = await data.read_chunk()
+			if not chunk:
+				break
+			print(len(chunk))
+			f.write(chunk)
+	return {'filename': filename}
+
+@routes.get('/chat')
 @aiohttp_jinja2.template('chat.html')
 async def chat(request):
 	ws_current = web.WebSocketResponse()

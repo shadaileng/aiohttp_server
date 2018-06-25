@@ -28,7 +28,7 @@ def server():
 	# 程序启动和关闭的回调函数
 	app.on_startup.append(init_db)
 	app.on_cleanup.append(close_db)
-	app.on_cleanup.append(clearWebsocket)
+	app.on_cleanup.append(on_shutdown)
 	# 添加中间件
 	set_middleware(app)
 	# 设置websockets
@@ -39,10 +39,10 @@ def server():
 	web.run_app(app)
 
 
-async def clearWebsocket(app):
+async def on_shutdown(app):
 	print('=======================')
 	for ws in app['websockets'].values():
-		await ws.close()
+		await ws.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
 	app['websockets'].clear()
 
 

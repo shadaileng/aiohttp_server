@@ -283,6 +283,8 @@ import jinja2
 
 aiohttp_jinja2.setup(
     app, loader=jinja2.PackageLoader('www', 'templates'))
+# aiohttp_jinja2.setup(
+#    app, loader=jinja2.FileSystemLoader('./www/templates'))
 ```
 
 > 请求处理函数标注模板，并返回数据
@@ -360,3 +362,76 @@ def set_middleware(app):
 > 根据处理函数`handler`处理请求`request`得到响应`response`的状态码来选择`jinja2`要渲染的模板。
 
 > 如果处理函数在处理请求时抛出异常(`Internal Error`对应状态码`500`,`NotFound`对应状态码`404`)，捕获`web.HTTPException`异常，并根据其状态码选择选渲染模板。
+
+## 表单
+
+> 如果表单函数是`get`(`<form method='get'>`),可以使用`Request.query`获取参数。
+
+```
+async def index(request):
+  for k, v in request.query.items():
+    print('%s: %s' % (k, v))
+```
+
+> 如果表单函数是`post`, 可以使用`Request.post()`或者`Request.multipart()`接受数据。
+
+> `Request.post()`支持`application/x-www-form-urlencoded`和`multipart/form-data`两种数据编码，上传的文件数据会保存到临时文件夹。
+
+```
+# 表单
+<form method='post' accept-charset='utf-8' enctype='application/x-www-form-urlencoded'>
+  <label for="name">name</label>
+  <input type="text" name="name" value=""><br><br>
+  <label for="password">password</label>
+  <input type="password" name="password" value=""><br><br>
+  <input type="submit" value="login"/>
+</form>
+
+# 后台接收数据
+async def login_post(request):
+  data = await request.post()
+  name = data['name']
+  password = data['password']
+```
+
+## 文件上传
+
+> 首先设置表单数据编码`enctype="multipart/form-data"`
+
+```
+<form method="post" action="/upload" enctype="multipart/form-data">
+  <label for="file">file</label>
+  <input type="file" name="file" value=""><br><br>
+  <input type="submit" value="upload"/>
+</form>
+```
+
+> 通过`Request.post()`将上传的文件写入到内存中，然后根据文件字段取对应的文件信息.
+
+```
+async def upload(request):
+  data = await request.post()
+  file = data['file']
+  filename = file.filename
+  file_ = file.file
+  with open('./' + filename, 'wb') as f:
+    data = file_.read()
+    f.write(data)
+```
+
+> 如果上传的文件过大，可能会包内存溢出的异常。为了解决这个问题，可以分块读取文件。
+
+```
+async def upload(request):
+  reader = await request.multipart()
+  data = await reader.next()
+  filename = data.filename
+  with open('./' + filename, 'wb') as f:
+    while True:
+      # 默认每次读取8192字节
+      chunk = await data.read_chunk()
+      if not chunk:
+        break
+      print(len(chunk))
+      f.write(chunk)
+```
